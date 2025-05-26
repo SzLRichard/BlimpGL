@@ -13,6 +13,8 @@
     <None Remove="Resources\airship2.obj" />
     <None Remove="Resources\blimp.obj" />
     <None Remove="Resources\blimp_v2.obj" />
+    <None Remove="Resources\mount.obj" />
+    <None Remove="Resources\Mountain.obj" />
     <None Remove="Resources\skybox.png" />
     <None Remove="Resources\teapot.obj" />
     <None Remove="Shaders\FragmentShader.frag" />
@@ -21,6 +23,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\blimp.obj" />
+    <EmbeddedResource Include="Resources\mount.obj" />
+    <EmbeddedResource Include="Resources\Mountain.obj" />
     <EmbeddedResource Include="Resources\skybox.png" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />

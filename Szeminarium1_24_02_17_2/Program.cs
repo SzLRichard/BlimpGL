@@ -24,12 +24,12 @@ namespace Szeminarium1_24_02_17_2
 
         private static uint program;
 
-        private static GlObject teapot;
+        private static GlObject blimp;
 
         private static GlObject table;
 
         private static GlCube glCubeRotating;
-
+        
         private static GlCube skyBox;
 
         private static float Shininess = 50;
@@ -45,6 +45,9 @@ namespace Szeminarium1_24_02_17_2
         private const string LightPositionVariableName = "lightPos";
         private const string ViewPosVariableName = "viewPos";
         private const string ShininessVariableName = "shininess";
+
+        private static List<GlObject> mountains = new List<GlObject>();
+        private static Random random = new Random();
 
         private static Vector3D<float> _blimpPosition = Vector3D<float>.Zero;
 
@@ -161,7 +164,7 @@ namespace Szeminarium1_24_02_17_2
             controller.Update((float)deltaTime);
         }
 
-        private static unsafe void DrawPulsingTeapot()
+        private static unsafe void DrawBlimp()
         {
             // Create model matrix for the blimp
             var scale = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale * 2f); // Larger scale for huge blimp
@@ -171,8 +174,8 @@ namespace Szeminarium1_24_02_17_2
             var modelMatrix = scale * rotation * translation;
 
             SetModelMatrix(modelMatrix);
-            Gl.BindVertexArray(teapot.Vao);
-            Gl.DrawElements(GLEnum.Triangles, teapot.IndexArrayLength, GLEnum.UnsignedInt, null);
+            Gl.BindVertexArray(blimp.Vao);
+            Gl.DrawElements(GLEnum.Triangles, blimp.IndexArrayLength, GLEnum.UnsignedInt, null);
             Gl.BindVertexArray(0);
         }
 
@@ -195,9 +198,9 @@ namespace Szeminarium1_24_02_17_2
             SetViewerPosition();
             SetShininess();
 
-            DrawPulsingTeapot();
+            DrawBlimp();
 
-            DrawRevolvingCube();
+            DrawMountains();
 
             DrawSkyBox();
 
@@ -210,7 +213,29 @@ namespace Szeminarium1_24_02_17_2
 
             controller.Render();
         }
+        private static unsafe void DrawMountains()
+        {
+            // Define mountain positions (you can customize these)
+            Vector3D<float>[] mountainPositions = new Vector3D<float>[]
+            {
+        new Vector3D<float>(-30f, 0f, -30f),
+        new Vector3D<float>(30f, 0f, -30f),
+        new Vector3D<float>(-30f, 0f, 30f),
+        new Vector3D<float>(30f, 0f, 30f)
+            };
 
+            float mountainScale = 5.0f; // Adjust scale as needed
+
+            for (int i = 0; i < mountains.Count; i++)
+            {
+                var modelMatrix = Matrix4X4.CreateScale(mountainScale) *
+                                 Matrix4X4.CreateTranslation(mountainPositions[i]);
+                SetModelMatrix(modelMatrix);
+                Gl.BindVertexArray(mountains[i].Vao);
+                Gl.DrawElements(GLEnum.Triangles, mountains[i].IndexArrayLength, GLEnum.UnsignedInt, null);
+                Gl.BindVertexArray(0);
+            }
+        }
         private static unsafe void DrawSkyBox()
         {
             Matrix4X4<float> modelMatrix = Matrix4X4.CreateScale(400f);
@@ -290,24 +315,6 @@ namespace Szeminarium1_24_02_17_2
             CheckError();
         }
 
-        private static unsafe void DrawRevolvingCube()
-        {
-            // set material uniform to metal
-
-            Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(1f);
-            Matrix4X4<float> rotx = Matrix4X4.CreateRotationX((float)Math.PI / 4f);
-            Matrix4X4<float> rotz = Matrix4X4.CreateRotationZ((float)Math.PI / 4f);
-            Matrix4X4<float> rotLocY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeAngleOwnRevolution);
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(4f, 4f, 0f);
-            Matrix4X4<float> rotGlobY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeAngleRevolutionOnGlobalY);
-            Matrix4X4<float> modelMatrix = diamondScale * rotx * rotz * rotLocY * trans * rotGlobY;
-
-            SetModelMatrix(modelMatrix);
-            Gl.BindVertexArray(glCubeRotating.Vao);
-            Gl.DrawElements(GLEnum.Triangles, glCubeRotating.IndexArrayLength, GLEnum.UnsignedInt, null);
-            Gl.BindVertexArray(0);
-        }
-
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
@@ -348,7 +355,7 @@ namespace Szeminarium1_24_02_17_2
             float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
             float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
 
-            teapot =ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj");
+            blimp =ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj");
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
                                   System.Drawing.Color.Azure.G/256f,
@@ -356,7 +363,12 @@ namespace Szeminarium1_24_02_17_2
                                   1f];
             table = GlCube.CreateSquare(Gl, tableColor);
 
-            glCubeRotating = GlCube.CreateCubeWithFaceColors(Gl, face1Color, face2Color, face3Color, face4Color, face5Color, face6Color);
+            for (int i = 0; i < 4; i++)
+            {
+                // Create mountain object
+                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mount.obj");
+                mountains.Add(mountain);
+            }
 
             skyBox = GlCube.CreateInteriorCube(Gl, "");
         }
@@ -365,8 +377,11 @@ namespace Szeminarium1_24_02_17_2
 
         private static void Window_Closing()
         {
-            teapot.ReleaseGlObject();
-            glCubeRotating.ReleaseGlObject();
+            blimp.ReleaseGlObject();
+            foreach (var mountain in mountains)
+            {
+                mountain?.ReleaseGlObject();
+            }
         }
 
         private static unsafe void SetProjectionMatrix()
