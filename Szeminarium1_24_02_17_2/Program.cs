@@ -46,6 +46,8 @@ namespace Szeminarium1_24_02_17_2
         private const string ViewPosVariableName = "viewPos";
         private const string ShininessVariableName = "shininess";
 
+        private static Vector3D<float> _blimpPosition = Vector3D<float>.Zero;
+
         static void Main(string[] args)
         {
             WindowOptions windowOptions = WindowOptions.Default;
@@ -94,8 +96,8 @@ namespace Szeminarium1_24_02_17_2
 
             LinkProgram();
 
-           //Gl.Enable(EnableCap.CullFace);
-
+            Gl.Enable(EnableCap.CullFace);
+            //Gl.Disable(GLEnum.CullFace);
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
         }
@@ -140,25 +142,6 @@ namespace Szeminarium1_24_02_17_2
         {
             switch (key)
             {
-                case Key.Left:
-                    cameraDescriptor.DecreaseZYAngle();
-                    break;
-                    ;
-                case Key.Right:
-                    cameraDescriptor.IncreaseZYAngle();
-                    break;
-                case Key.Down:
-                    cameraDescriptor.IncreaseDistance();
-                    break;
-                case Key.Up:
-                    cameraDescriptor.DecreaseDistance();
-                    break;
-                case Key.U:
-                    cameraDescriptor.IncreaseZXAngle();
-                    break;
-                case Key.D:
-                    cameraDescriptor.DecreaseZXAngle();
-                    break;
                 case Key.Space:
                     cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
                     break;
@@ -167,13 +150,30 @@ namespace Szeminarium1_24_02_17_2
 
         private static void Window_Update(double deltaTime)
         {
-            //Console.WriteLine($"Update after {deltaTime} [s].");
-            // multithreaded
-            // make sure it is threadsafe
-            // NO GL calls
-            cubeArrangementModel.AdvanceTime(deltaTime);
+            foreach (var keyboard in inputContext.Keyboards)
+            {
+                cameraDescriptor.ProcessInput(deltaTime, keyboard, ref _blimpPosition);
+            }
 
+            cameraDescriptor.Update(deltaTime, _blimpPosition);
+
+            cubeArrangementModel.AdvanceTime(deltaTime);
             controller.Update((float)deltaTime);
+        }
+
+        private static unsafe void DrawPulsingTeapot()
+        {
+            // Create model matrix for the blimp
+            var scale = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale * 2f); // Larger scale for huge blimp
+            var rotation = Matrix4X4.CreateRotationY(cameraDescriptor.Yaw);
+            var translation = Matrix4X4.CreateTranslation(_blimpPosition);
+
+            var modelMatrix = scale * rotation * translation;
+
+            SetModelMatrix(modelMatrix);
+            Gl.BindVertexArray(teapot.Vao);
+            Gl.DrawElements(GLEnum.Triangles, teapot.IndexArrayLength, GLEnum.UnsignedInt, null);
+            Gl.BindVertexArray(0);
         }
 
         private static unsafe void Window_Render(double deltaTime)
@@ -308,22 +308,6 @@ namespace Szeminarium1_24_02_17_2
             Gl.BindVertexArray(0);
         }
 
-        private static unsafe void DrawPulsingTeapot()
-        {
-            // set material uniform to rubber
-
-            var modelMatrixForCenterCube = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
-            SetModelMatrix(modelMatrixForCenterCube);
-            Gl.BindVertexArray(teapot.Vao);
-            Gl.DrawElements(GLEnum.Triangles, teapot.IndexArrayLength, GLEnum.UnsignedInt, null);
-            Gl.BindVertexArray(0);
-
-            //var modelMatrixForTable = Matrix4X4.CreateScale(1f, 1f, 1f);
-            //SetModelMatrix(modelMatrixForTable);
-            //Gl.BindVertexArray(table.Vao);
-            //Gl.DrawElements(GLEnum.Triangles, table.IndexArrayLength, GLEnum.UnsignedInt, null);
-            //Gl.BindVertexArray(0);
-        }
 
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
@@ -364,7 +348,7 @@ namespace Szeminarium1_24_02_17_2
             float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
             float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
 
-            teapot =ObjectResourceReader.CreateObjectFromResource(Gl, "airship2.obj");
+            teapot =ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj");
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
                                   System.Drawing.Color.Azure.G/256f,
@@ -387,7 +371,7 @@ namespace Szeminarium1_24_02_17_2
 
         private static unsafe void SetProjectionMatrix()
         {
-            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 1000);
+            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)Math.PI / 4f, 1024f / 768f, 0.1f, 10000);
             int location = Gl.GetUniformLocation(program, ProjectionMatrixVariableName);
 
             if (location == -1)

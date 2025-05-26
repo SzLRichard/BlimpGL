@@ -9,7 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\1390 Airship.obj" />
     <None Remove="Resources\airship2.obj" />
+    <None Remove="Resources\blimp.obj" />
+    <None Remove="Resources\blimp_v2.obj" />
     <None Remove="Resources\skybox.png" />
     <None Remove="Resources\teapot.obj" />
     <None Remove="Shaders\FragmentShader.frag" />
@@ -17,7 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\1390 Airship.obj" />
     <EmbeddedResource Include="Resources\airship2.obj" />
+    <EmbeddedResource Include="Resources\blimp.obj" />
+    <EmbeddedResource Include="Resources\blimp_v2.obj" />
     <EmbeddedResource Include="Resources\skybox.png" />
     <EmbeddedResource Include="Resources\teapot.obj" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
