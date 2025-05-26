@@ -20,12 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\1390 Airship.obj" />
-    <EmbeddedResource Include="Resources\airship2.obj" />
     <EmbeddedResource Include="Resources\blimp.obj" />
-    <EmbeddedResource Include="Resources\blimp_v2.obj" />
     <EmbeddedResource Include="Resources\skybox.png" />
-    <EmbeddedResource Include="Resources\teapot.obj" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />
   </ItemGroup>

@@ -9,8 +9,8 @@ namespace Szeminarium1_24_02_17_2
 
         private const float FollowDistance = 400f;
         private const float FollowHeight = 300f;
-        private const float RotationSpeed = 20f;
-        private const float MovementSpeed = 30f;
+        private const float RotationSpeed = 1f;
+        private const float MovementSpeed = 300f;
 
         private Vector3D<float> _position;
         private Vector3D<float> _targetPosition = Vector3D<float>.Zero;
@@ -59,11 +59,11 @@ namespace Szeminarium1_24_02_17_2
                 blimpPosition += Right * moveSpeed;
             }
 
-            if (keyboard.IsKeyPressed(Key.Q))
+            if (keyboard.IsKeyPressed(Key.E))
             {
                 _yaw -= rotSpeed;
             }
-            if (keyboard.IsKeyPressed(Key.E))
+            if (keyboard.IsKeyPressed(Key.Q))
             {
                 _yaw += rotSpeed;
             }
