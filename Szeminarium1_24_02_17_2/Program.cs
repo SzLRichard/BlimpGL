@@ -33,6 +33,7 @@ namespace Szeminarium1_24_02_17_2
         private static GlCube skyBox;
 
         private static float Shininess = 50;
+        private static float skyboxSize=20f;
 
         private const string ModelMatrixVariableName = "uModel";
         private const string NormalMatrixVariableName = "uNormal";
@@ -47,7 +48,11 @@ namespace Szeminarium1_24_02_17_2
         private const string ShininessVariableName = "shininess";
 
         private static List<GlObject> mountains = new List<GlObject>();
+        private static List<Vector3D<float>> mountainPositions = new List<Vector3D<float>>();
         private static Random random = new Random();
+
+        private static List<float> mountainScales = new List<float>();
+        private static List<Matrix4X4<float>> mountainModelMatrices = new List<Matrix4X4<float>>();
 
         private static Vector3D<float> _blimpPosition = Vector3D<float>.Zero;
 
@@ -215,22 +220,10 @@ namespace Szeminarium1_24_02_17_2
         }
         private static unsafe void DrawMountains()
         {
-            // Define mountain positions (you can customize these)
-            Vector3D<float>[] mountainPositions = new Vector3D<float>[]
+            // Use pre-calculated model matrices to prevent vibrating
+            for (int i = 0; i < mountains.Count && i < mountainModelMatrices.Count; i++)
             {
-        new Vector3D<float>(-30f, 0f, -30f),
-        new Vector3D<float>(30f, 0f, -30f),
-        new Vector3D<float>(-30f, 0f, 30f),
-        new Vector3D<float>(30f, 0f, 30f)
-            };
-
-            float mountainScale = 5.0f; // Adjust scale as needed
-
-            for (int i = 0; i < mountains.Count; i++)
-            {
-                var modelMatrix = Matrix4X4.CreateScale(mountainScale) *
-                                 Matrix4X4.CreateTranslation(mountainPositions[i]);
-                SetModelMatrix(modelMatrix);
+                SetModelMatrix(mountainModelMatrices[i]);
                 Gl.BindVertexArray(mountains[i].Vao);
                 Gl.DrawElements(GLEnum.Triangles, mountains[i].IndexArrayLength, GLEnum.UnsignedInt, null);
                 Gl.BindVertexArray(0);
@@ -363,17 +356,98 @@ namespace Szeminarium1_24_02_17_2
                                   1f];
             table = GlCube.CreateSquare(Gl, tableColor);
 
-            for (int i = 0; i < 4; i++)
-            {
-                // Create mountain object
-                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mount.obj");
-                mountains.Add(mountain);
-            }
+            CreateMountains();
 
-            skyBox = GlCube.CreateInteriorCube(Gl, "");
+            skyBox = GlCube.CreateInteriorCube(Gl, "",skyboxSize);
         }
 
-        
+        private static void CreateMountains()
+        {
+            int mountainCount = 20;
+            float baseMountainScale = 200f;
+            float scaleVariation = 0.4f;
+            float minDistance = 80f;
+            float skyboxRadius = 4000f;
+            float groundLevel = -1000f ;
+            float heightVariation = 20f; 
+
+
+            mountains.Clear();
+            mountainPositions.Clear();
+            mountainScales.Clear();
+            mountainModelMatrices.Clear();
+
+            Console.WriteLine($"Creating {mountainCount} mountains within radius {skyboxRadius}");
+
+            for (int i = 0; i < mountainCount; i++)
+            {
+                Vector3D<float> position;
+                float scale;
+                bool positionValid;
+                int attempts = 0;
+                const int maxAttempts = 50;
+
+                do
+                {
+                    if (i < 4)
+                    {
+                        float angle = i * (float)Math.PI / 2f + (float)(random.NextDouble() - 0.5) * 0.5f;
+                        float distance = skyboxRadius * 0.6f + (float)random.NextDouble() * skyboxRadius * 0.3f;
+
+                        position = new Vector3D<float>(
+                            (float)(Math.Cos(angle) * distance),
+                            groundLevel + (float)(random.NextDouble() * heightVariation - heightVariation / 2),
+                            (float)(Math.Sin(angle) * distance)
+                        );
+                    }
+                    else
+                    {
+                        float angle = (float)(random.NextDouble() * Math.PI * 2);
+                        float distance = (float)(random.NextDouble() * skyboxRadius * 0.8f + skyboxRadius * 0.2f);
+
+                        position = new Vector3D<float>(
+                            (float)(Math.Cos(angle) * distance),
+                            groundLevel + (float)(random.NextDouble() * heightVariation - heightVariation / 2),
+                            (float)(Math.Sin(angle) * distance)
+                        );
+                    }
+
+                    positionValid = true;
+                    foreach (var existingPos in mountainPositions)
+                    {
+                        if (Vector3D.Distance(position, existingPos) < minDistance)
+                        {
+                            positionValid = false;
+                            break;
+                        }
+                    }
+
+                    if (Vector3D.Distance(position, Vector3D<float>.Zero) < minDistance * 0.5f)
+                    {
+                        positionValid = false;
+                    }
+
+                    attempts++;
+                    if (attempts >= maxAttempts)
+                    {
+                        Console.WriteLine($"Placing mountain {i} after {attempts} attempts at suboptimal position");
+                        positionValid = true;
+                    }
+                } while (!positionValid);
+
+                scale = baseMountainScale * (1f + (float)(random.NextDouble() - 0.5) * scaleVariation);
+
+                var modelMatrix = Matrix4X4.CreateScale(scale) * Matrix4X4.CreateTranslation(position);
+
+                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mount.obj");
+                mountains.Add(mountain);
+                mountainPositions.Add(position);
+                mountainScales.Add(scale);
+                mountainModelMatrices.Add(modelMatrix);
+            }
+
+        }
+
 
         private static void Window_Closing()
         {

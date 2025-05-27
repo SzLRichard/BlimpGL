@@ -198,9 +198,9 @@ namespace Szeminarium1_24_02_17_2
             return new GlCube(vao, vertices, colors, indices, indexArrayLength, Gl);
         }
 
-        public static unsafe GlCube CreateInteriorCube(GL Gl, string textureResourceId)
+        public static unsafe GlCube CreateInteriorCube(GL Gl, string textureResourceId,float scale)
         {
-            float scale = 20;
+            //float scale = 1;
             uint vao = Gl.GenVertexArray();
             Gl.BindVertexArray(vao);
 
