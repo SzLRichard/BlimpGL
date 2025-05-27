@@ -35,6 +35,16 @@ namespace Szeminarium1_24_02_17_2
         private static float Shininess = 50;
         private static float skyboxSize=20f;
 
+        private static bool gameOver = false;
+        private static string gameOverMessage = "";
+        private static float gameOverTimer = 0f;
+        private static List<float> mountainCollisionRadii = new List<float>();
+
+        // Debug variables for collision detection
+        private static float closestMountainDistance = float.MaxValue;
+        private static int closestMountainIndex = -1;
+        private static bool showCollisionDebug = true;
+
         private const string ModelMatrixVariableName = "uModel";
         private const string NormalMatrixVariableName = "uNormal";
         private const string ViewMatrixVariableName = "uView";
@@ -151,21 +161,55 @@ namespace Szeminarium1_24_02_17_2
             switch (key)
             {
                 case Key.Space:
-                    cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
+                    if (gameOver)
+                    {
+                        ResetGame();
+                    }
+                    else
+                    {
+                        cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
+                    }
+                    break;
+                case Key.R:
+                    if (gameOver)
+                    {
+                        ResetGame();
+                    }
+                    break;
+                case Key.F1:
+                    showCollisionDebug = !showCollisionDebug;
                     break;
             }
         }
 
         private static void Window_Update(double deltaTime)
         {
-            foreach (var keyboard in inputContext.Keyboards)
+            if (!gameOver)
             {
-                cameraDescriptor.ProcessInput(deltaTime, keyboard, ref _blimpPosition);
+                foreach (var keyboard in inputContext.Keyboards)
+                {
+                    cameraDescriptor.ProcessInput(deltaTime, keyboard, ref _blimpPosition);
+                }
+
+                cameraDescriptor.Update(deltaTime, _blimpPosition);
+
+                // Check for collisions with mountains
+                float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f; // Same as blimp scale
+                if (CheckCollisionWithMountains(_blimpPosition, blimpRadius))
+                {
+                    gameOver = true;
+                    gameOverMessage = $"GAME OVER - Blimp crashed into mountain #{closestMountainIndex}!";
+                    gameOverTimer = 0f;
+                    Console.WriteLine($"{gameOverMessage} Distance was: {closestMountainDistance:F2}");
+                }
+
+                cubeArrangementModel.AdvanceTime(deltaTime);
+            }
+            else
+            {
+                gameOverTimer += (float)deltaTime;
             }
 
-            cameraDescriptor.Update(deltaTime, _blimpPosition);
-
-            cubeArrangementModel.AdvanceTime(deltaTime);
             controller.Update((float)deltaTime);
         }
 
@@ -215,6 +259,63 @@ namespace Szeminarium1_24_02_17_2
             ImGuiNET.ImGui.SliderFloat("Shininess", ref Shininess, 1, 200);
             ImGuiNET.ImGui.End();
 
+            if (gameOver)
+            {
+                // Create a centered window for game over message
+                var io = ImGuiNET.ImGui.GetIO();
+                ImGuiNET.ImGui.SetNextWindowPos(new System.Numerics.Vector2(io.DisplaySize.X * 0.5f, io.DisplaySize.Y * 0.5f),
+                    ImGuiCond.Always, new System.Numerics.Vector2(0.5f, 0.5f));
+
+                ImGuiNET.ImGui.Begin("Game Over",
+                    ImGuiWindowFlags.AlwaysAutoResize |
+                    ImGuiWindowFlags.NoMove |
+                    ImGuiWindowFlags.NoResize |
+                    ImGuiWindowFlags.NoCollapse);
+
+                ImGuiNET.ImGui.Text(gameOverMessage);
+                ImGuiNET.ImGui.Separator();
+                ImGuiNET.ImGui.Text($"Survival Time: {gameOverTimer:F1} seconds");
+                ImGuiNET.ImGui.Separator();
+                ImGuiNET.ImGui.Text("Press SPACE or R to restart");
+
+                if (ImGuiNET.ImGui.Button("Restart Game"))
+                {
+                    ResetGame();
+                }
+
+                ImGuiNET.ImGui.End();
+            }
+            else
+            {
+                // Show game status
+                ImGuiNET.ImGui.Begin("Game Status", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar);
+                ImGuiNET.ImGui.Text($"Blimp Position: ({_blimpPosition.X:F1}, {_blimpPosition.Y:F1}, {_blimpPosition.Z:F1})");
+                
+                float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
+                ImGuiNET.ImGui.Text($"Blimp Radius: {blimpRadius:F1}");
+                
+                if (showCollisionDebug)
+                {
+                    ImGuiNET.ImGui.Separator();
+                    ImGuiNET.ImGui.Text("Collision Debug Info:");
+                    ImGuiNET.ImGui.Text($"Closest Mountain: #{closestMountainIndex}");
+                    ImGuiNET.ImGui.Text($"Distance: {closestMountainDistance:F1}");
+                    
+                    if (closestMountainIndex >= 0 && closestMountainIndex < mountainCollisionRadii.Count)
+                    {
+                        float mountainRadius = mountainCollisionRadii[closestMountainIndex];
+                        float requiredDistance = 1050f;
+                        ImGuiNET.ImGui.Text($"Mountain Radius: {mountainRadius:F1}");
+                        ImGuiNET.ImGui.Text($"Required Distance: {requiredDistance:F1}");
+                        ImGuiNET.ImGui.Text($"Collision: {(closestMountainDistance < requiredDistance ? "YES" : "NO")}");
+                    }
+                    
+                    ImGuiNET.ImGui.Text("Press F1 to toggle debug info");
+                }
+                
+                ImGuiNET.ImGui.Text("Avoid the mountains!");
+                ImGuiNET.ImGui.End();
+            }
 
             controller.Render();
         }
@@ -361,21 +462,73 @@ namespace Szeminarium1_24_02_17_2
             skyBox = GlCube.CreateInteriorCube(Gl, "",skyboxSize);
         }
 
+        private static bool CheckCollisionWithMountains(Vector3D<float> blimpPosition, float blimpRadius)
+        {
+            closestMountainDistance = float.MaxValue;
+            closestMountainIndex = -1;
+            
+            // Debug: Log blimp position and radius
+            if (showCollisionDebug && mountainPositions.Count > 0)
+            {
+                Console.WriteLine($"Checking collision: Blimp at ({blimpPosition.X:F1}, {blimpPosition.Y:F1}, {blimpPosition.Z:F1}), radius {blimpRadius:F1}");
+            }
+
+            for (int i = 0; i < mountainPositions.Count && i < mountainCollisionRadii.Count; i++)
+            {
+                Vector3D<float> mountainPos = mountainPositions[i];
+                float mountainRadius = mountainCollisionRadii[i];
+
+                // Calculate distance between blimp and mountain centers
+                float distance = Vector3D.Distance(blimpPosition, mountainPos);
+
+                // Track closest mountain for debugging
+                if (distance < closestMountainDistance)
+                {
+                    closestMountainDistance = distance;
+                    closestMountainIndex = i;
+                }
+
+                // Check if collision occurred
+                float requiredDistance = blimpRadius + mountainRadius;
+                if (distance < requiredDistance)
+                {
+                    Console.WriteLine($"COLLISION DETECTED!");
+                    Console.WriteLine($"Mountain {i}: Position({mountainPos.X:F1}, {mountainPos.Y:F1}, {mountainPos.Z:F1})");
+                    Console.WriteLine($"Distance: {distance:F1}, Required: {requiredDistance:F1}");
+                    Console.WriteLine($"Blimp radius: {blimpRadius:F1}, Mountain radius: {mountainRadius:F1}");
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        // Add this method to reset the game
+        private static void ResetGame()
+        {
+            gameOver = false;
+            gameOverMessage = "";
+            gameOverTimer = 0f;
+            _blimpPosition = Vector3D<float>.Zero;
+            cameraDescriptor.Reset(); // You'll need to add this method to CameraDescriptor
+            Console.WriteLine("Game Reset");
+        }
+
         private static void CreateMountains()
         {
             int mountainCount = 20;
-            float baseMountainScale = 200f;
+            float baseMountainScale = 1000f;
             float scaleVariation = 0.4f;
             float minDistance = 80f;
             float skyboxRadius = 4000f;
             float groundLevel = -1000f ;
-            float heightVariation = 20f; 
-
+            float heightVariation = 20f;
 
             mountains.Clear();
             mountainPositions.Clear();
             mountainScales.Clear();
             mountainModelMatrices.Clear();
+            mountainCollisionRadii.Clear();
 
             Console.WriteLine($"Creating {mountainCount} mountains within radius {skyboxRadius}");
 
@@ -436,16 +589,23 @@ namespace Szeminarium1_24_02_17_2
                 } while (!positionValid);
 
                 scale = baseMountainScale * (1f + (float)(random.NextDouble() - 0.5) * scaleVariation);
-
                 var modelMatrix = Matrix4X4.CreateScale(scale) * Matrix4X4.CreateTranslation(position);
 
-                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mount.obj");
+                // Increased collision radius for more reliable detectiocn
+                // Consider the actual size of your mountain model - you may need to adjust this
+                float collisionRadius = scale * 0.8f; // Increased from 0.6f to 0.8f
+
+                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mountain2.obj");
                 mountains.Add(mountain);
                 mountainPositions.Add(position);
                 mountainScales.Add(scale);
                 mountainModelMatrices.Add(modelMatrix);
+                mountainCollisionRadii.Add(collisionRadius);
+
+                Console.WriteLine($"Mountain {i}: Position({position.X:F1}, {position.Y:F1}, {position.Z:F1}), Scale: {scale:F1}, Collision Radius: {collisionRadius:F1}");
             }
 
+            Console.WriteLine($"Successfully created {mountains.Count} mountains");
         }
 
 

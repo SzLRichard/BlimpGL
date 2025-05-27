@@ -30,6 +30,13 @@ namespace Szeminarium1_24_02_17_2
         
         public Vector3D<float> Right => Vector3D.Normalize(Vector3D.Cross(Forward, UpVector));
 
+        public void Reset()
+        {
+            _position = new Vector3D<float>(0, 0, 0);
+            _yaw = 0f;
+            _pitch = 0f;
+        }
+
         public void Update(double deltaTime, Vector3D<float> blimpPosition)
         {
             var horizontalOffset = -new Vector3D<float>(
