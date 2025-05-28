@@ -34,6 +34,8 @@ namespace Szeminarium1_24_02_17_2
 
         private static float Shininess = 50;
         private static float skyboxSize = 20f;
+        private static List<float> coinRotationSpeeds = new List<float>();
+        private static List<float> coinCurrentRotations = new List<float>();
 
         private static bool gameOver = false;
         private static string gameOverMessage = "";
@@ -198,7 +200,6 @@ namespace Szeminarium1_24_02_17_2
 
                 cameraDescriptor.Update(deltaTime, _blimpPosition);
 
- 
                 float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
                 if (CheckCollisionWithMountains(_blimpPosition, blimpRadius))
                 {
@@ -209,6 +210,7 @@ namespace Szeminarium1_24_02_17_2
                 }
 
                 CheckCoinCollection(_blimpPosition, blimpRadius);
+                UpdateCoinRotations(deltaTime);
 
                 cubeArrangementModel.AdvanceTime(deltaTime);
             }
@@ -219,10 +221,28 @@ namespace Szeminarium1_24_02_17_2
 
             controller.Update((float)deltaTime);
         }
+        private static void UpdateCoinRotations(double deltaTime)
+        {
+            for (int i = 0; i < coinCurrentRotations.Count; i++)
+            {
+                if (!coinCollected[i])
+                {
+                    coinCurrentRotations[i] += coinRotationSpeeds[i] * (float)deltaTime;
+
+                    if (coinCurrentRotations[i] > Math.PI * 2)
+                        coinCurrentRotations[i] -= (float)(Math.PI * 2);
+
+                    float coinScale = 250f;
+                    var scale = Matrix4X4.CreateScale(coinScale);
+                    var rotation = Matrix4X4.CreateRotationY(coinCurrentRotations[i]);
+                    var translation = Matrix4X4.CreateTranslation(coinPositions[i]);
+                    coinModelMatrices[i] = scale * rotation * translation;
+                }
+            }
+        }
 
         private static unsafe void DrawBlimp()
         {
-            // Create model matrix for the blimp
             var scale = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale * 2f);
             var rotation = Matrix4X4.CreateRotationY(cameraDescriptor.Yaw);
             var translation = Matrix4X4.CreateTranslation(_blimpPosition);
@@ -491,7 +511,7 @@ namespace Szeminarium1_24_02_17_2
         {
             int coinCount = 30;
             float skyboxRadius = 3500f;
-            float minDistanceFromMountains = 200f;
+            float minDistanceFromMountains = 250f;
             float minDistanceFromStart = 100f;
             float minDistanceBetweenCoins = 80f;
 
@@ -499,6 +519,8 @@ namespace Szeminarium1_24_02_17_2
             coinPositions.Clear();
             coinCollected.Clear();
             coinModelMatrices.Clear();
+            coinRotationSpeeds.Clear();
+            coinCurrentRotations.Clear();
 
             Console.WriteLine($"Creating {coinCount} coins");
 
@@ -516,7 +538,7 @@ namespace Szeminarium1_24_02_17_2
 
                     position = new Vector3D<float>(
                         (float)(Math.Cos(angle) * distance),
-                        0f,
+                        40f,
                         (float)(Math.Sin(angle) * distance)
                     );
 
@@ -561,7 +583,11 @@ namespace Szeminarium1_24_02_17_2
 
                 float coinScale = 250f;
                 var scale = Matrix4X4.CreateScale(coinScale);
-                var rotation = Matrix4X4.CreateRotationY((float)(random.NextDouble() * Math.PI * 2));
+
+                float initialRotation = (float)(random.NextDouble() * Math.PI * 2);
+                float rotationSpeed = (float)(1.0 + random.NextDouble() * 2.0);
+
+                var rotation = Matrix4X4.CreateRotationY(initialRotation);
                 var translation = Matrix4X4.CreateTranslation(position);
                 var modelMatrix = scale * rotation * translation;
 
@@ -570,6 +596,8 @@ namespace Szeminarium1_24_02_17_2
                 coinPositions.Add(position);
                 coinCollected.Add(false);
                 coinModelMatrices.Add(modelMatrix);
+                coinRotationSpeeds.Add(rotationSpeed);
+                coinCurrentRotations.Add(initialRotation);
 
                 Console.WriteLine($"Coin {i}: Position({position.X:F1}, {position.Y:F1}, {position.Z:F1})");
             }
@@ -641,11 +669,16 @@ namespace Szeminarium1_24_02_17_2
             for (int i = 0; i < coinCollected.Count; i++)
             {
                 coinCollected[i] = false;
+                if (i < coinCurrentRotations.Count)
+                {
+                    coinCurrentRotations[i] = (float)(random.NextDouble() * Math.PI * 2);
+                }
             }
 
             cameraDescriptor.Reset();
             Console.WriteLine("Game Reset - Score: 0, All coins reset");
         }
+
 
         private static void CreateMountains()
         {
