@@ -11,6 +11,7 @@
   <ItemGroup>
     <None Remove="Resources\1390 Airship.obj" />
     <None Remove="Resources\airship2.obj" />
+    <None Remove="Resources\bird.obj" />
     <None Remove="Resources\blimp.obj" />
     <None Remove="Resources\blimp_v2.obj" />
     <None Remove="Resources\coin.obj" />
@@ -24,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\bird.obj" />
     <EmbeddedResource Include="Resources\blimp.obj" />
     <EmbeddedResource Include="Resources\coin.obj" />
     <EmbeddedResource Include="Resources\mount.obj" />

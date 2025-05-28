@@ -73,7 +73,19 @@ namespace Szeminarium1_24_02_17_2
         private static List<Matrix4X4<float>> mountainModelMatrices = new List<Matrix4X4<float>>();
 
         private static Vector3D<float> _blimpPosition = Vector3D<float>.Zero;
+        private static List<GlObject> birds = new List<GlObject>();
+        private static List<Vector3D<float>> birdPositions = new List<Vector3D<float>>();
+        private static List<Vector3D<float>> birdStartPositions = new List<Vector3D<float>>();
+        private static List<Matrix4X4<float>> birdModelMatrices = new List<Matrix4X4<float>>();
+        private static List<float> birdFlightProgress = new List<float>();
+        private static List<float> birdFlightSpeeds = new List<float>();
+        private static List<int> birdFlightPatterns = new List<int>();
+        private static List<float> birdRotations = new List<float>();
+        private static float birdCollisionRadius = 80f;
 
+        private static float birdFlightRadius = 2000f;
+        private static float birdFlightHeight = 200f;
+        private static float birdHeightVariation = 100f;
         static void Main(string[] args)
         {
             WindowOptions windowOptions = WindowOptions.Default;
@@ -201,6 +213,7 @@ namespace Szeminarium1_24_02_17_2
                 cameraDescriptor.Update(deltaTime, _blimpPosition);
 
                 float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
+
                 if (CheckCollisionWithMountains(_blimpPosition, blimpRadius))
                 {
                     gameOver = true;
@@ -209,8 +222,16 @@ namespace Szeminarium1_24_02_17_2
                     Console.WriteLine($"{gameOverMessage} Distance was: {closestMountainDistance:F2}");
                 }
 
+                if (CheckBirdCollisions(_blimpPosition, blimpRadius))
+                {
+                    gameOver = true;
+                    gameOverMessage = "GAME OVER - Blimp hit by a bird!";
+                    gameOverTimer = 0f;
+                }
+
                 CheckCoinCollection(_blimpPosition, blimpRadius);
                 UpdateCoinRotations(deltaTime);
+                UpdateBirds(deltaTime);
 
                 cubeArrangementModel.AdvanceTime(deltaTime);
             }
@@ -293,6 +314,7 @@ namespace Szeminarium1_24_02_17_2
             DrawMountains();
 
             DrawCoins();
+            DrawBirds();
 
             DrawSkyBox();
 
@@ -483,6 +505,177 @@ namespace Szeminarium1_24_02_17_2
             CheckError();
         }
 
+        private static void CreateBirds()
+        {
+            int birdCount = 15;
+
+            birds.Clear();
+            birdPositions.Clear();
+            birdStartPositions.Clear();
+            birdModelMatrices.Clear();
+            birdFlightProgress.Clear();
+            birdFlightSpeeds.Clear();
+            birdFlightPatterns.Clear();
+            birdRotations.Clear();
+
+            Console.WriteLine($"Creating {birdCount} birds");
+
+            for (int i = 0; i < birdCount; i++)
+            {
+                int flightPattern = i % 4;
+
+                float startAngle = (float)(random.NextDouble() * Math.PI * 2);
+                float startRadius = birdFlightRadius + (float)(random.NextDouble() - 0.5) * 500f;
+                float startHeight = birdFlightHeight + (float)(random.NextDouble() - 0.5) * birdHeightVariation;
+
+                Vector3D<float> startPosition = new Vector3D<float>(
+                    (float)(Math.Cos(startAngle) * startRadius),
+                    startHeight,
+                    (float)(Math.Sin(startAngle) * startRadius)
+                );
+
+                float flightSpeed = 0.1f + (float)(random.NextDouble() * 0.3f);
+
+                float startProgress = (float)random.NextDouble();
+
+                Vector3D<float> initialPosition = CalculateBirdPosition(startPosition, flightPattern, startProgress);
+
+                float birdScale =1f;
+                var scale = Matrix4X4.CreateScale(birdScale);
+                var translation = Matrix4X4.CreateTranslation(initialPosition);
+                var modelMatrix = scale * translation;
+
+                var bird = ObjectResourceReader.CreateObjectFromResource(Gl, "bird.obj");
+
+                birds.Add(bird);
+                birdPositions.Add(initialPosition);
+                birdStartPositions.Add(startPosition);
+                birdModelMatrices.Add(modelMatrix);
+                birdFlightProgress.Add(startProgress);
+                birdFlightSpeeds.Add(flightSpeed);
+                birdFlightPatterns.Add(flightPattern);
+                birdRotations.Add(0f);
+
+                Console.WriteLine($"Bird {i}: Pattern {flightPattern}, Start Position({startPosition.X:F1}, {startPosition.Y:F1}, {startPosition.Z:F1})");
+            }
+
+            Console.WriteLine($"Successfully created {birds.Count} birds");
+        }
+        private static Vector3D<float> CalculateBirdPosition(Vector3D<float> startPos, int pattern, float progress)
+        {
+            Vector3D<float> position = startPos;
+
+            switch (pattern)
+            {
+                case 0:
+                    {
+                        float angle = progress * (float)(Math.PI * 2);
+                        float radius = 800f;
+                        position.X = startPos.X + (float)(Math.Cos(angle) * radius);
+                        position.Z = startPos.Z + (float)(Math.Sin(angle) * radius);
+                        position.Y = startPos.Y + (float)(Math.Sin(angle * 2) * 50f);
+                        break;
+                    }
+                case 1:
+                    {
+                        float angle = progress * (float)(Math.PI * 2);
+                        float radius = 600f;
+                        position.X = startPos.X + (float)(Math.Sin(angle) * radius);
+                        position.Z = startPos.Z + (float)(Math.Sin(angle * 2) * radius * 0.5f);
+                        position.Y = startPos.Y + (float)(Math.Cos(angle * 3) * 30f);
+                        break;
+                    }
+                case 2:
+                    {
+                        float t = (float)(Math.Sin(progress * Math.PI * 2) * 0.5f + 0.5f);
+                        Vector3D<float> endPos = startPos + new Vector3D<float>(1200f, 0f, 800f);
+                        position = Vector3D.Lerp(startPos, endPos, t);
+                        position.Y += (float)(Math.Sin(progress * Math.PI * 4) * 40f);
+                        break;
+                    }
+                case 3:
+                    {
+                        float angle = progress * (float)(Math.PI * 4);
+                        float radius = 400f + progress * 400f;
+                        position.X = startPos.X + (float)(Math.Cos(angle) * radius);
+                        position.Z = startPos.Z + (float)(Math.Sin(angle) * radius);
+                        position.Y = startPos.Y + progress * 200f - 100f;
+                        break;
+                    }
+            }
+
+            return position;
+        }
+
+        private static float CalculateBirdRotation(Vector3D<float> currentPos, Vector3D<float> previousPos)
+        {
+            Vector3D<float> direction = currentPos - previousPos;
+            if (direction.LengthSquared > 0.001f)
+            {
+                return (float)Math.Atan2(direction.X, direction.Z);
+            }
+            return 0f;
+        }
+        private static void UpdateBirds(double deltaTime)
+        {
+            for (int i = 0; i < birds.Count; i++)
+            {
+                Vector3D<float> previousPosition = birdPositions[i];
+
+                birdFlightProgress[i] += birdFlightSpeeds[i] * (float)deltaTime;
+
+                if (birdFlightProgress[i] > 1.0f)
+                    birdFlightProgress[i] -= 1.0f;
+
+                Vector3D<float> newPosition = CalculateBirdPosition(
+                    birdStartPositions[i],
+                    birdFlightPatterns[i],
+                    birdFlightProgress[i]
+                );
+
+                float rotation = CalculateBirdRotation(newPosition, previousPosition);
+                birdRotations[i] = rotation;
+
+                birdPositions[i] = newPosition;
+
+                float birdScale = 1f;
+                var scale = Matrix4X4.CreateScale(birdScale);
+                var rotationMatrix = Matrix4X4.CreateRotationY(rotation);
+                var translation = Matrix4X4.CreateTranslation(newPosition);
+                birdModelMatrices[i] = scale * rotationMatrix * translation;
+            }
+        }
+
+        private static bool CheckBirdCollisions(Vector3D<float> blimpPosition, float blimpRadius)
+        {
+            for (int i = 0; i < birdPositions.Count; i++)
+            {
+                float distance = Vector3D.Distance(blimpPosition, birdPositions[i]);
+                float combinedRadius = blimpRadius + birdCollisionRadius;
+
+                if (distance < combinedRadius)
+                {
+                    Console.WriteLine($"BIRD COLLISION! Bird {i} at distance {distance:F1}");
+                    Console.WriteLine($"Bird Position: ({birdPositions[i].X:F1}, {birdPositions[i].Y:F1}, {birdPositions[i].Z:F1})");
+                    Console.WriteLine($"Blimp Position: ({blimpPosition.X:F1}, {blimpPosition.Y:F1}, {blimpPosition.Z:F1})");
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static unsafe void DrawBirds()
+        {
+            for (int i = 0; i < birds.Count; i++)
+            {
+                SetModelMatrix(birdModelMatrices[i]);
+                Gl.BindVertexArray(birds[i].Vao);
+                Gl.DrawElements(GLEnum.Triangles, birds[i].IndexArrayLength, GLEnum.UnsignedInt, null);
+                Gl.BindVertexArray(0);
+            }
+        }
+
         private static unsafe void SetUpObjects()
         {
 
@@ -503,6 +696,7 @@ namespace Szeminarium1_24_02_17_2
 
             CreateMountains();
             CreateCoins();
+            CreateBirds();
 
             skyBox = GlCube.CreateInteriorCube(Gl, "", skyboxSize);
         }
@@ -784,6 +978,10 @@ namespace Szeminarium1_24_02_17_2
             foreach (var coin in coins)
             {
                 coin?.ReleaseGlObject();
+            }
+            foreach (var bird in birds)
+            {
+                bird?.ReleaseGlObject();
             }
         }
 

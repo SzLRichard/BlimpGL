@@ -1,0 +1,4 @@
+Egy léghajót irányítunk a levegőben a hegyek között.
+A léghajót lehet külső, vagy belső nézetből is irányítani.
+Körülöttünk repülnek madarak előre meghatározott módon.
+Az a cél, hogy minél több lebegő érmét szedjünk fel úgy, hogy elkerüljük a hegyekel és madarakkal való ütközéseket.
