@@ -84,7 +84,7 @@ namespace Szeminarium1_24_02_17_2
         private static float birdCollisionRadius = 80f;
 
         private static float birdFlightRadius = 2000f;
-        private static float birdFlightHeight = 200f;
+        private static float birdFlightHeight = 100f;
         private static float birdHeightVariation = 100f;
         static void Main(string[] args)
         {
@@ -220,6 +220,7 @@ namespace Szeminarium1_24_02_17_2
                     gameOverMessage = $"GAME OVER - Blimp crashed into mountain #{closestMountainIndex}!";
                     gameOverTimer = 0f;
                     Console.WriteLine($"{gameOverMessage} Distance was: {closestMountainDistance:F2}");
+                    
                 }
 
                 if (CheckBirdCollisions(_blimpPosition, blimpRadius))
@@ -534,7 +535,7 @@ namespace Szeminarium1_24_02_17_2
                     (float)(Math.Sin(startAngle) * startRadius)
                 );
 
-                float flightSpeed = 0.1f + (float)(random.NextDouble() * 0.3f);
+                float flightSpeed = 0.1f + (float)(random.NextDouble() * 0.1f);
 
                 float startProgress = (float)random.NextDouble();
 
@@ -820,17 +821,15 @@ namespace Szeminarium1_24_02_17_2
         {
             closestMountainDistance = float.MaxValue;
             closestMountainIndex = -1;
+            bool collisionOccurred = false;
 
-            if (showCollisionDebug && mountainPositions.Count > 0)
+            for (int i = 0; i < mountainPositions.Count; i++)
             {
-                Console.WriteLine($"Checking collision: Blimp at ({blimpPosition.X:F1}, {blimpPosition.Y:F1}, {blimpPosition.Z:F1}), radius {blimpRadius:F1}");
-            }
+                float distance = Vector3D.Distance(blimpPosition, mountainPositions[i]);
 
-            for (int i = 0; i < mountainPositions.Count && i < mountainCollisionRadii.Count; i++)
-            {
-                Vector3D<float> mountainPos = mountainPositions[i];
                 float mountainRadius = mountainCollisionRadii[i];
-                float distance = Vector3D.Distance(blimpPosition, mountainPos);
+                float requiredDistance = 1050f;
+
 
                 if (distance < closestMountainDistance)
                 {
@@ -838,18 +837,18 @@ namespace Szeminarium1_24_02_17_2
                     closestMountainIndex = i;
                 }
 
-                float requiredDistance = blimpRadius + mountainRadius;
                 if (distance < requiredDistance)
                 {
-                    Console.WriteLine($"COLLISION DETECTED!");
-                    Console.WriteLine($"Mountain {i}: Position({mountainPos.X:F1}, {mountainPos.Y:F1}, {mountainPos.Z:F1})");
-                    Console.WriteLine($"Distance: {distance:F1}, Required: {requiredDistance:F1}");
-                    Console.WriteLine($"Blimp radius: {blimpRadius:F1}, Mountain radius: {mountainRadius:F1}");
-                    return true;
+                    Console.WriteLine($"MOUNTAIN COLLISION! Index: {i}");
+                    Console.WriteLine($"Blimp Pos: {blimpPosition}");
+                    Console.WriteLine($"Mountain Pos: {mountainPositions[i]}");
+                    Console.WriteLine($"Distance: {distance} < Required: {requiredDistance}");
+                    Console.WriteLine($"Blimp Radius: {blimpRadius}, Mountain Radius: {mountainRadius}");
+                    collisionOccurred = true;
                 }
             }
 
-            return false;
+            return collisionOccurred;
         }
 
         private static void ResetGame()
