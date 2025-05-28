@@ -10,7 +10,7 @@ namespace Szeminarium1_24_02_17_2
         private const float FollowDistance = 350f;
         private const float FollowHeight = 150f;
         private const float RotationSpeed = 1f;
-        private const float MovementSpeed = 300f;
+        private const float MovementSpeed = 500f;
 
         private Vector3D<float> _position;
         private Vector3D<float> _targetPosition = Vector3D<float>.Zero;

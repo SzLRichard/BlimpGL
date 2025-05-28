@@ -51,7 +51,7 @@ namespace Szeminarium1_24_02_17_2
         private static List<bool> coinCollected = new List<bool>();
         private static List<Matrix4X4<float>> coinModelMatrices = new List<Matrix4X4<float>>();
         private static int score = 0;
-        private static float coinCollectionRadius = 50f;
+        private static float coinCollectionRadius = 70f;
 
         private const string ModelMatrixVariableName = "uModel";
         private const string NormalMatrixVariableName = "uNormal";
