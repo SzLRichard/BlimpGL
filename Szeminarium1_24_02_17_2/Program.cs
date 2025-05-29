@@ -204,7 +204,7 @@ namespace Szeminarium1_24_02_17_2
                 if (CheckCollisionWithMountains(_blimpPosition, blimpRadius))
                 {
                     gameOver = true;
-                    gameOverMessage = $"GAME OVER - Blimp crashed into mountain #{closestMountainIndex}!";
+                    gameOverMessage = $"GAME OVER - Blimp crashed into mountain!";
                 }
 
                 if (CheckBirdCollisions(_blimpPosition, blimpRadius))
@@ -295,10 +295,6 @@ namespace Szeminarium1_24_02_17_2
             DrawBirds();
             DrawSkyBox();
 
-            ImGuiNET.ImGui.Begin("Lighting properties",
-                ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar);
-            ImGuiNET.ImGui.SliderFloat("Shininess", ref Shininess, 1, 200);
-            ImGuiNET.ImGui.End();
 
             if (gameOver)
             {
@@ -509,7 +505,8 @@ namespace Szeminarium1_24_02_17_2
                 var translation = Matrix4X4.CreateTranslation(initialPosition);
                 var modelMatrix = scale * translation;
 
-                var bird = ObjectResourceReader.CreateObjectFromResource(Gl, "bird.obj");
+                float[] birdColor = { 0.3f, 0.2f, 0.1f, 1.0f };
+                var bird = ObjectResourceReader.CreateObjectFromResource(Gl, "bird.obj", birdColor);
 
                 birds.Add(bird);
                 birdPositions.Add(initialPosition);
@@ -637,7 +634,8 @@ namespace Szeminarium1_24_02_17_2
 
         private static unsafe void SetUpObjects()
         {
-            blimp = ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj");
+            float[] blimpColor = { 0.0f, 1.0f, 1.0f, 1.0f };
+            blimp = ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj", blimpColor);
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
                                   System.Drawing.Color.Azure.G/256f,
@@ -733,7 +731,8 @@ namespace Szeminarium1_24_02_17_2
                 var translation = Matrix4X4.CreateTranslation(position);
                 var modelMatrix = scale * rotation * translation;
 
-                var coin = ObjectResourceReader.CreateObjectFromResource(Gl, "coin.obj");
+                float[] coinColor = { 1.0f, 1.0f, 0.0f, 1.0f };
+                var coin = ObjectResourceReader.CreateObjectFromResource(Gl, "coin.obj", coinColor);
                 coins.Add(coin);
                 coinPositions.Add(position);
                 coinCollected.Add(false);
@@ -882,7 +881,8 @@ namespace Szeminarium1_24_02_17_2
 
                 float collisionRadius = scale * 0.8f;
 
-                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mountain2.obj");
+                float[] mountainColor = { 0.5f, 0.5f, 0.5f, 1.0f };
+                var mountain = ObjectResourceReader.CreateObjectFromResource(Gl, "mountain2.obj", mountainColor); 
                 mountains.Add(mountain);
                 mountainPositions.Add(position);
                 mountainScales.Add(scale);

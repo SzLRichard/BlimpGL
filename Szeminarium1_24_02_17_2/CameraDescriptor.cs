@@ -8,9 +8,9 @@ namespace Szeminarium1_24_02_17_2
     {
         private const float FollowDistance = 350f;
         private const float FollowHeight = 150f;
-        private const float FirstPersonHeight = 50f; // Height offset for first person view
-        private const float RotationSpeed = 1f;
-        private const float MovementSpeed = 500f;
+        private const float FirstPersonHeight = 50f;
+        private const float RotationSpeed = 1.5f;
+        private const float MovementSpeed = 600f;
 
         private Vector3D<float> _position;
         private Vector3D<float> _targetPosition = Vector3D<float>.Zero;
@@ -49,16 +49,14 @@ namespace Szeminarium1_24_02_17_2
         {
             if (_isFirstPerson)
             {
-                // First person: camera is at the blimp position with a slight height offset
+               
                 var desiredPosition = blimpPosition + Vector3D<float>.UnitY * FirstPersonHeight;
                 _position = Vector3D.Lerp(_position, desiredPosition, (float)(deltaTime * 10));
 
-                // Target is in the direction the blimp is facing
                 _targetPosition = _position + Forward * 100f;
             }
             else
             {
-                // Third person: camera follows behind the blimp
                 var horizontalOffset = -new Vector3D<float>(
                     (float)Math.Sin(_yaw),
                     0,

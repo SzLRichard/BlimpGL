@@ -11,8 +11,12 @@ namespace Szeminarium1_24_03_05_2
 {
     internal class ObjectResourceReader
     {
-        public static unsafe GlObject CreateObjectFromResource(GL Gl, string resourceName)
+        public static unsafe GlObject CreateObjectFromResource(GL Gl, string resourceName, float[] color = null)
         {
+            // Default to red if no color specified (for backward compatibility)
+            if (color == null)
+                color = new float[] { 1.0f, 0.0f, 0.0f, 1.0f };
+
             List<float[]> objVertices = new List<float[]>();
             List<float[]> objNormals = new List<float[]>();
             List<int[]> objFaces = new List<int[]>();
@@ -107,7 +111,8 @@ namespace Szeminarium1_24_03_05_2
                         glVertices.Add(ny);
                         glVertices.Add(nz);
 
-                        glColors.AddRange([1.0f, 0.0f, 0.0f, 1.0f]);
+                        // Use the specified color instead of hardcoded red
+                        glColors.AddRange(color);
 
                         index = nextIndex++;
                         uniqueVertexMap[key] = index;
