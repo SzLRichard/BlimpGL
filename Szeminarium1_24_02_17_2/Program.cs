@@ -39,12 +39,11 @@ namespace Szeminarium1_24_02_17_2
 
         private static bool gameOver = false;
         private static string gameOverMessage = "";
-        private static float gameOverTimer = 0f;
         private static List<float> mountainCollisionRadii = new List<float>();
 
         private static float closestMountainDistance = float.MaxValue;
         private static int closestMountainIndex = -1;
-        private static bool showCollisionDebug = true;
+        private static bool showCollisionDebug = false;
 
         private static List<GlObject> coins = new List<GlObject>();
         private static List<Vector3D<float>> coinPositions = new List<Vector3D<float>>();
@@ -106,9 +105,6 @@ namespace Szeminarium1_24_02_17_2
 
         private static void Window_Load()
         {
-            //Console.WriteLine("Load");
-
-            // set up input handling
             inputContext = window.CreateInput();
             foreach (var keyboard in inputContext.Keyboards)
             {
@@ -119,13 +115,10 @@ namespace Szeminarium1_24_02_17_2
 
             controller = new ImGuiController(Gl, window, inputContext);
 
-            // Handle resizes
             window.FramebufferResize += s =>
             {
-                // Adjust the viewport to the new window size
                 Gl.Viewport(s);
             };
-
 
             Gl.ClearColor(System.Drawing.Color.Black);
 
@@ -134,7 +127,6 @@ namespace Szeminarium1_24_02_17_2
             LinkProgram();
 
             Gl.Enable(EnableCap.CullFace);
-            //Gl.Disable(GLEnum.CullFace);
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
         }
@@ -218,16 +210,12 @@ namespace Szeminarium1_24_02_17_2
                 {
                     gameOver = true;
                     gameOverMessage = $"GAME OVER - Blimp crashed into mountain #{closestMountainIndex}!";
-                    gameOverTimer = 0f;
-                    Console.WriteLine($"{gameOverMessage} Distance was: {closestMountainDistance:F2}");
-                    
                 }
 
                 if (CheckBirdCollisions(_blimpPosition, blimpRadius))
                 {
                     gameOver = true;
                     gameOverMessage = "GAME OVER - Blimp hit by a bird!";
-                    gameOverTimer = 0f;
                 }
 
                 CheckCoinCollection(_blimpPosition, blimpRadius);
@@ -235,10 +223,6 @@ namespace Szeminarium1_24_02_17_2
                 UpdateBirds(deltaTime);
 
                 cubeArrangementModel.AdvanceTime(deltaTime);
-            }
-            else
-            {
-                gameOverTimer += (float)deltaTime;
             }
 
             controller.Update((float)deltaTime);
@@ -293,9 +277,6 @@ namespace Szeminarium1_24_02_17_2
 
         private static unsafe void Window_Render(double deltaTime)
         {
-            //Console.WriteLine($"Render after {deltaTime} [s].");
-
-            // GL here
             Gl.Clear(ClearBufferMask.ColorBufferBit);
             Gl.Clear(ClearBufferMask.DepthBufferBit);
 
@@ -309,7 +290,6 @@ namespace Szeminarium1_24_02_17_2
             SetViewerPosition();
             SetShininess();
 
-            // Don't draw the blimp in first person mode to avoid seeing it in front of the camera
             if (!cameraDescriptor.IsFirstPerson)
             {
                 DrawBlimp();
@@ -320,7 +300,6 @@ namespace Szeminarium1_24_02_17_2
             DrawBirds();
             DrawSkyBox();
 
-            //ImGuiNET.ImGui.ShowDemoWindow();
             ImGuiNET.ImGui.Begin("Lighting properties",
                 ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar);
             ImGuiNET.ImGui.SliderFloat("Shininess", ref Shininess, 1, 200);
@@ -328,7 +307,6 @@ namespace Szeminarium1_24_02_17_2
 
             if (gameOver)
             {
-                // Create a centered window for game over message
                 var io = ImGuiNET.ImGui.GetIO();
                 ImGuiNET.ImGui.SetNextWindowPos(new System.Numerics.Vector2(io.DisplaySize.X * 0.5f, io.DisplaySize.Y * 0.5f),
                     ImGuiCond.Always, new System.Numerics.Vector2(0.5f, 0.5f));
@@ -342,7 +320,6 @@ namespace Szeminarium1_24_02_17_2
                 ImGuiNET.ImGui.Text(gameOverMessage);
                 ImGuiNET.ImGui.Separator();
                 ImGuiNET.ImGui.Text($"Final Score: {score} coins collected");
-                ImGuiNET.ImGui.Text($"Survival Time: {gameOverTimer:F1} seconds");
                 ImGuiNET.ImGui.Separator();
                 ImGuiNET.ImGui.Text("Press SPACE or R to restart");
 
@@ -359,7 +336,6 @@ namespace Szeminarium1_24_02_17_2
                 ImGuiNET.ImGui.Text($"Score: {score} coins");
                 ImGuiNET.ImGui.Separator();
 
-                // Camera perspective toggle button
                 string cameraButtonText = cameraDescriptor.IsFirstPerson ? "Switch to Third Person" : "Switch to First Person";
                 if (ImGuiNET.ImGui.Button(cameraButtonText))
                 {
@@ -369,28 +345,11 @@ namespace Szeminarium1_24_02_17_2
                 ImGuiNET.ImGui.Text($"Camera Mode: {(cameraDescriptor.IsFirstPerson ? "First Person" : "Third Person")}");
                 ImGuiNET.ImGui.Separator();
 
-                ImGuiNET.ImGui.Text($"Blimp Position: ({_blimpPosition.X:F1}, {_blimpPosition.Y:F1}, {_blimpPosition.Z:F1})");
-
-                float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
-                ImGuiNET.ImGui.Text($"Blimp Radius: {blimpRadius:F1}");
-
                 if (showCollisionDebug)
                 {
-                    ImGuiNET.ImGui.Separator();
-                    ImGuiNET.ImGui.Text("Collision Debug Info:");
+                    ImGuiNET.ImGui.Text("Collision Debug:");
                     ImGuiNET.ImGui.Text($"Closest Mountain: #{closestMountainIndex}");
                     ImGuiNET.ImGui.Text($"Distance: {closestMountainDistance:F1}");
-
-                    if (closestMountainIndex >= 0 && closestMountainIndex < mountainCollisionRadii.Count)
-                    {
-                        float mountainRadius = mountainCollisionRadii[closestMountainIndex];
-                        float requiredDistance = 1065f;
-                        ImGuiNET.ImGui.Text($"Mountain Radius: {mountainRadius:F1}");
-                        ImGuiNET.ImGui.Text($"Required Distance: {requiredDistance:F1}");
-                        ImGuiNET.ImGui.Text($"Collision: {(closestMountainDistance < requiredDistance ? "YES" : "NO")}");
-                    }
-
-                    ImGuiNET.ImGui.Text("Press F1 to toggle debug info");
                 }
 
                 ImGuiNET.ImGui.Text("Collect coins and avoid the mountains!");
@@ -421,7 +380,6 @@ namespace Szeminarium1_24_02_17_2
             {
                 throw new Exception($"{TextureUniformVariableName} uniform not found on shader.");
             }
-            // set texture 0
             Gl.Uniform1(textureLocation, 0);
 
             Gl.ActiveTexture(TextureUnit.Texture0);
@@ -489,7 +447,6 @@ namespace Szeminarium1_24_02_17_2
             CheckError();
         }
 
-
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
             int location = Gl.GetUniformLocation(program, ModelMatrixVariableName);
@@ -532,8 +489,6 @@ namespace Szeminarium1_24_02_17_2
             birdFlightPatterns.Clear();
             birdRotations.Clear();
 
-            Console.WriteLine($"Creating {birdCount} birds");
-
             for (int i = 0; i < birdCount; i++)
             {
                 int flightPattern = i % 4;
@@ -554,7 +509,7 @@ namespace Szeminarium1_24_02_17_2
 
                 Vector3D<float> initialPosition = CalculateBirdPosition(startPosition, flightPattern, startProgress);
 
-                float birdScale =1f;
+                float birdScale = 1f;
                 var scale = Matrix4X4.CreateScale(birdScale);
                 var translation = Matrix4X4.CreateTranslation(initialPosition);
                 var modelMatrix = scale * translation;
@@ -569,12 +524,9 @@ namespace Szeminarium1_24_02_17_2
                 birdFlightSpeeds.Add(flightSpeed);
                 birdFlightPatterns.Add(flightPattern);
                 birdRotations.Add(0f);
-
-                Console.WriteLine($"Bird {i}: Pattern {flightPattern}, Start Position({startPosition.X:F1}, {startPosition.Y:F1}, {startPosition.Z:F1})");
             }
-
-            Console.WriteLine($"Successfully created {birds.Count} birds");
         }
+
         private static Vector3D<float> CalculateBirdPosition(Vector3D<float> startPos, int pattern, float progress)
         {
             Vector3D<float> position = startPos;
@@ -630,6 +582,7 @@ namespace Szeminarium1_24_02_17_2
             }
             return 0f;
         }
+
         private static void UpdateBirds(double deltaTime)
         {
             for (int i = 0; i < birds.Count; i++)
@@ -669,9 +622,6 @@ namespace Szeminarium1_24_02_17_2
 
                 if (distance < combinedRadius)
                 {
-                    Console.WriteLine($"BIRD COLLISION! Bird {i} at distance {distance:F1}");
-                    Console.WriteLine($"Bird Position: ({birdPositions[i].X:F1}, {birdPositions[i].Y:F1}, {birdPositions[i].Z:F1})");
-                    Console.WriteLine($"Blimp Position: ({blimpPosition.X:F1}, {blimpPosition.Y:F1}, {blimpPosition.Z:F1})");
                     return true;
                 }
             }
@@ -692,14 +642,6 @@ namespace Szeminarium1_24_02_17_2
 
         private static unsafe void SetUpObjects()
         {
-
-            float[] face1Color = [1f, 0f, 0f, 1.0f];
-            float[] face2Color = [0.0f, 1.0f, 0.0f, 1.0f];
-            float[] face3Color = [0.0f, 0.0f, 1.0f, 1.0f];
-            float[] face4Color = [1.0f, 0.0f, 1.0f, 1.0f];
-            float[] face5Color = [0.0f, 1.0f, 1.0f, 1.0f];
-            float[] face6Color = [1.0f, 1.0f, 0.0f, 1.0f];
-
             blimp = ObjectResourceReader.CreateObjectFromResource(Gl, "blimp.obj");
 
             float[] tableColor = [System.Drawing.Color.Azure.R/256f,
@@ -729,8 +671,6 @@ namespace Szeminarium1_24_02_17_2
             coinModelMatrices.Clear();
             coinRotationSpeeds.Clear();
             coinCurrentRotations.Clear();
-
-            Console.WriteLine($"Creating {coinCount} coins");
 
             for (int i = 0; i < coinCount; i++)
             {
@@ -784,7 +724,6 @@ namespace Szeminarium1_24_02_17_2
                     attempts++;
                     if (attempts >= maxAttempts)
                     {
-                        Console.WriteLine($"Placing coin {i} after {attempts} attempts at suboptimal position");
                         positionValid = true;
                     }
                 } while (!positionValid);
@@ -806,11 +745,7 @@ namespace Szeminarium1_24_02_17_2
                 coinModelMatrices.Add(modelMatrix);
                 coinRotationSpeeds.Add(rotationSpeed);
                 coinCurrentRotations.Add(initialRotation);
-
-                Console.WriteLine($"Coin {i}: Position({position.X:F1}, {position.Y:F1}, {position.Z:F1})");
             }
-
-            Console.WriteLine($"Successfully created {coins.Count} coins");
         }
 
         private static void CheckCoinCollection(Vector3D<float> blimpPosition, float blimpRadius)
@@ -824,7 +759,6 @@ namespace Szeminarium1_24_02_17_2
                     {
                         coinCollected[i] = true;
                         score++;
-                        Console.WriteLine($"Coin {i} collected! Score: {score}");
                     }
                 }
             }
@@ -843,7 +777,6 @@ namespace Szeminarium1_24_02_17_2
                 float mountainRadius = mountainCollisionRadii[i];
                 float requiredDistance = 1050f;
 
-
                 if (distance < closestMountainDistance)
                 {
                     closestMountainDistance = distance;
@@ -852,11 +785,6 @@ namespace Szeminarium1_24_02_17_2
 
                 if (distance < requiredDistance)
                 {
-                    Console.WriteLine($"MOUNTAIN COLLISION! Index: {i}");
-                    Console.WriteLine($"Blimp Pos: {blimpPosition}");
-                    Console.WriteLine($"Mountain Pos: {mountainPositions[i]}");
-                    Console.WriteLine($"Distance: {distance} < Required: {requiredDistance}");
-                    Console.WriteLine($"Blimp Radius: {blimpRadius}, Mountain Radius: {mountainRadius}");
                     collisionOccurred = true;
                 }
             }
@@ -868,7 +796,6 @@ namespace Szeminarium1_24_02_17_2
         {
             gameOver = false;
             gameOverMessage = "";
-            gameOverTimer = 0f;
             _blimpPosition = Vector3D<float>.Zero;
             score = 0;
 
@@ -882,9 +809,7 @@ namespace Szeminarium1_24_02_17_2
             }
 
             cameraDescriptor.Reset();
-            Console.WriteLine("Game Reset - Score: 0, All coins reset");
         }
-
 
         private static void CreateMountains()
         {
@@ -901,8 +826,6 @@ namespace Szeminarium1_24_02_17_2
             mountainScales.Clear();
             mountainModelMatrices.Clear();
             mountainCollisionRadii.Clear();
-
-            Console.WriteLine($"Creating {mountainCount} mountains within radius {skyboxRadius}");
 
             for (int i = 0; i < mountainCount; i++)
             {
@@ -955,14 +878,12 @@ namespace Szeminarium1_24_02_17_2
                     attempts++;
                     if (attempts >= maxAttempts)
                     {
-                        Console.WriteLine($"Placing mountain {i} after {attempts} attempts at suboptimal position");
                         positionValid = true;
                     }
                 } while (!positionValid);
 
                 scale = baseMountainScale * (1f + (float)(random.NextDouble() - 0.5) * scaleVariation);
                 var modelMatrix = Matrix4X4.CreateScale(scale) * Matrix4X4.CreateTranslation(position);
-
 
                 float collisionRadius = scale * 0.8f;
 
@@ -972,13 +893,8 @@ namespace Szeminarium1_24_02_17_2
                 mountainScales.Add(scale);
                 mountainModelMatrices.Add(modelMatrix);
                 mountainCollisionRadii.Add(collisionRadius);
-
-                Console.WriteLine($"Mountain {i}: Position({position.X:F1}, {position.Y:F1}, {position.Z:F1}), Scale: {scale:F1}, Collision Radius: {collisionRadius:F1}");
             }
-
-            Console.WriteLine($"Successfully created {mountains.Count} mountains");
         }
-
 
         private static void Window_Closing()
         {

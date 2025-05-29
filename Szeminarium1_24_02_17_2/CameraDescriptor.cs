@@ -106,14 +106,6 @@ namespace Szeminarium1_24_02_17_2
             {
                 _yaw += rotSpeed;
             }
-            if (keyboard.IsKeyPressed(Key.R))
-            {
-                _pitch = Math.Clamp(_pitch + rotSpeed, -MathF.PI / 6f, MathF.PI / 6f);
-            }
-            if (keyboard.IsKeyPressed(Key.F))
-            {
-                _pitch = Math.Clamp(_pitch - rotSpeed, -MathF.PI / 6f, MathF.PI / 6f);
-            }
         }
     }
 }
