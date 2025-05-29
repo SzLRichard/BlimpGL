@@ -299,7 +299,6 @@ namespace Szeminarium1_24_02_17_2
             Gl.Clear(ClearBufferMask.ColorBufferBit);
             Gl.Clear(ClearBufferMask.DepthBufferBit);
 
-
             Gl.UseProgram(program);
 
             SetViewMatrix();
@@ -310,13 +309,15 @@ namespace Szeminarium1_24_02_17_2
             SetViewerPosition();
             SetShininess();
 
-            DrawBlimp();
+            // Don't draw the blimp in first person mode to avoid seeing it in front of the camera
+            if (!cameraDescriptor.IsFirstPerson)
+            {
+                DrawBlimp();
+            }
 
             DrawMountains();
-
             DrawCoins();
             DrawBirds();
-
             DrawSkyBox();
 
             //ImGuiNET.ImGui.ShowDemoWindow();
@@ -357,6 +358,17 @@ namespace Szeminarium1_24_02_17_2
                 ImGuiNET.ImGui.Begin("Game Status", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar);
                 ImGuiNET.ImGui.Text($"Score: {score} coins");
                 ImGuiNET.ImGui.Separator();
+
+                // Camera perspective toggle button
+                string cameraButtonText = cameraDescriptor.IsFirstPerson ? "Switch to Third Person" : "Switch to First Person";
+                if (ImGuiNET.ImGui.Button(cameraButtonText))
+                {
+                    cameraDescriptor.TogglePerspective();
+                }
+
+                ImGuiNET.ImGui.Text($"Camera Mode: {(cameraDescriptor.IsFirstPerson ? "First Person" : "Third Person")}");
+                ImGuiNET.ImGui.Separator();
+
                 ImGuiNET.ImGui.Text($"Blimp Position: ({_blimpPosition.X:F1}, {_blimpPosition.Y:F1}, {_blimpPosition.Z:F1})");
 
                 float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
@@ -382,6 +394,7 @@ namespace Szeminarium1_24_02_17_2
                 }
 
                 ImGuiNET.ImGui.Text("Collect coins and avoid the mountains!");
+                ImGuiNET.ImGui.Text("Controls: WASD to move, Q/E to rotate, R/F to pitch");
                 ImGuiNET.ImGui.End();
             }
 
