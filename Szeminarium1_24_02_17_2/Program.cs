@@ -12,7 +12,6 @@ namespace Szeminarium1_24_02_17_2
     {
         private static CameraDescriptor cameraDescriptor = new();
 
-        private static CubeArrangementModel cubeArrangementModel = new();
 
         private static IWindow window;
 
@@ -176,10 +175,6 @@ namespace Szeminarium1_24_02_17_2
                     {
                         ResetGame();
                     }
-                    else
-                    {
-                        cubeArrangementModel.AnimationEnabeld = !cubeArrangementModel.AnimationEnabeld;
-                    }
                     break;
                 case Key.R:
                     if (gameOver)
@@ -204,7 +199,7 @@ namespace Szeminarium1_24_02_17_2
 
                 cameraDescriptor.Update(deltaTime, _blimpPosition);
 
-                float blimpRadius = (float)cubeArrangementModel.CenterCubeScale * 2f;
+                float blimpRadius = 2f;//(float)cubeArrangementModel.CenterCubeScale * 2f;
 
                 if (CheckCollisionWithMountains(_blimpPosition, blimpRadius))
                 {
@@ -222,7 +217,7 @@ namespace Szeminarium1_24_02_17_2
                 UpdateCoinRotations(deltaTime);
                 UpdateBirds(deltaTime);
 
-                cubeArrangementModel.AdvanceTime(deltaTime);
+                //cubeArrangementModel.AdvanceTime(deltaTime);
             }
 
             controller.Update((float)deltaTime);
@@ -249,7 +244,7 @@ namespace Szeminarium1_24_02_17_2
 
         private static unsafe void DrawBlimp()
         {
-            var scale = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale * 2f);
+            var scale = Matrix4X4.CreateScale(2f);
             var rotation = Matrix4X4.CreateRotationY(cameraDescriptor.Yaw);
             var translation = Matrix4X4.CreateTranslation(_blimpPosition);
 
@@ -353,7 +348,7 @@ namespace Szeminarium1_24_02_17_2
                 }
 
                 ImGuiNET.ImGui.Text("Collect coins and avoid the mountains!");
-                ImGuiNET.ImGui.Text("Controls: WASD to move, Q/E to rotate, R/F to pitch");
+                ImGuiNET.ImGui.Text("Controls: WASD to move, Q/E to rotate.");
                 ImGuiNET.ImGui.End();
             }
 

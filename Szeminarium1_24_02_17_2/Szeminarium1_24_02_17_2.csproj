@@ -19,6 +19,9 @@
     <None Remove="Resources\Mountain.obj" />
     <None Remove="Resources\mountain2.obj" />
     <None Remove="Resources\skybox.png" />
+    <None Remove="Resources\skybox2.jpg" />
+    <None Remove="Resources\skybox3.png" />
+    <None Remove="Resources\skybox4.png" />
     <None Remove="Resources\teapot.obj" />
     <None Remove="Shaders\FragmentShader.frag" />
     <None Remove="Shaders\VertexShader.vert" />
@@ -32,6 +35,9 @@
     <EmbeddedResource Include="Resources\Mountain.obj" />
     <EmbeddedResource Include="Resources\mountain2.obj" />
     <EmbeddedResource Include="Resources\skybox.png" />
+    <EmbeddedResource Include="Resources\skybox2.jpg" />
+    <EmbeddedResource Include="Resources\skybox3.png" />
+    <EmbeddedResource Include="Resources\skybox4.png" />
     <EmbeddedResource Include="Shaders\FragmentShader.frag" />
     <EmbeddedResource Include="Shaders\VertexShader.vert" />
   </ItemGroup>
